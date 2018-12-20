@@ -1,4 +1,4 @@
-=pypi_mirror.py= is a small script to generate a partial PyPi
+=pypi_mirror.py= is a small script to generate a partial PyPI
 mirror. It relies on =pip= to do the most difficult part of the job
 (downloading a package and its dependencies).
 
