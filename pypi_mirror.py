@@ -526,7 +526,7 @@ class DeleteCmd(MirrorCmd):
             new_pkgs.append(pkg)
         create_mirror(download_dir, mirror_dir, new_pkgs)
 
-class WriteMetadata(Cmd):
+class WriteMetadataCmd(Cmd):
 
     __cmd_name__ = 'write-metadata'
     __cmd_help__ = 'create metadata files'
