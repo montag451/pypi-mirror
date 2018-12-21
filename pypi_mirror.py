@@ -544,6 +544,28 @@ class WriteMetadataCmd(Cmd):
         super().run(args)
         create_metadata_files(args.download_dir, args.overwrite)
 
+class ExportCmd(Cmd):
+
+    __cmd_help__ = 'export the mirror into a file'
+
+    @classmethod
+    def add_args(cls, parser):
+        parser.add_argument(
+            '-o',
+            '--output',
+            required=True,
+            metavar='FILE',
+            help='export the mirror in %(metavar)s'
+        )
+
+    def run(self, args):
+        super().run(args)
+        with open(args.output, 'w') as f:
+            for pkg in list_pkgs(args.download_dir):
+                name = pkg.metadata.name
+                version = pkg.metadata.version
+                f.write('{}=={}\n'.format(name, version))
+
 def main():
     locale.setlocale(locale.LC_ALL, '')
     parser = argparse.ArgumentParser()
