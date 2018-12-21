@@ -53,15 +53,15 @@ def normalize(name):
 def parse_pkg_metadata(metadata):
     m = re.search(rb'^Name: (.*)$', metadata, re.MULTILINE)
     if not m:
-        raise Exception('invalid wheel metadata file')
+        raise Exception('invalid metadata file')
     name = m.group(1).decode('utf-8').strip()
     m = re.search(rb'^Version: (.*)$', metadata, re.MULTILINE)
     if not m:
-        raise Exception('invalid wheel metadata file')
+        raise Exception('invalid metadata file')
     version = m.group(1).decode('utf-8').strip()
     m = re.search(rb'^Home-page: (.*)$', metadata, re.MULTILINE)
     if not m:
-        raise Exception('invalid wheel metadata file')
+        raise Exception('invalid metadata file')
     homepage = m.group(1).decode('utf-8').strip()
     return Metadata(name, normalize(name), version, homepage)
 
