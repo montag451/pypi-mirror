@@ -31,7 +31,7 @@ help message of the =download= command, type:
 
 The commands that you will probably use the most are the =download=
 command and the =create= command. For example to create a mirror which
-contains the =aiohttp= package and its dependencies, you can type the
+contains the =requests= package and its dependencies, you can type the
 following:
 
 #+BEGIN_SRC sh
@@ -40,7 +40,7 @@ following:
 #+END_SRC
 
 The first command will create a =downloads= directory into the current
-directory and use =pip= to download the =aiohttp= package and its
+directory and use =pip= to download the =requests= package and its
 dependencies into the newly created directory. Then the =create=
 command will create a =simple= directory into the current directory
 and will build the mirror inside this newly created directory. You can
