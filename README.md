@@ -1,4 +1,4 @@
-`pypi_mirror` is a small script to generate a partial PyPI mirror. It
+`pypi-mirror` is a small script to generate a partial PyPI mirror. It
 relies on `pip` to do the most difficult part of the job (downloading
 a package and its dependencies).
 
@@ -11,14 +11,11 @@ mirror you should look at
 
 # Installation
 
-You can install `pypi_mirror` using `pip`:
+You can install `pypi-mirror` using `pip`:
 
 ```sh
 pip install python-pypi-mirror
 ```
-
-Or, as the script doesn't have any external dependencies, you can
-simply copy the script to the location of your choice to use it.
 
 # How to use it?
 
@@ -26,14 +23,14 @@ The script provides several commands to manage your mirror. To find
 out which commands are available, type:
 
 ```sh
-pypi_mirror --help
+pypi-mirror --help
 ```
 
 Every command provides its own help message. So for example to get the
 help message of the `download` command, type:
 
 ```sh
-pypi_mirror download --help
+pypi-mirror download --help
 ```
 
 The commands that you will probably use the most are the `download`
@@ -42,8 +39,8 @@ contains the `requests` package and its dependencies, you can type the
 following:
 
 ``` sh
-pypi_mirror -d downloads download requests
-pypi_mirror -d downloads create -m simple
+pypi-mirror -d downloads download requests
+pypi-mirror -d downloads create -m simple
 ```
 
 The first command will create a `downloads` directory into the current
