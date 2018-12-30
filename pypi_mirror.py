@@ -75,7 +75,10 @@ def get_metadata_from_archive(f, extension, extract_fn, member='PKG-INFO'):
     try:
         metadata = extract_fn(metadata_file).read()
     except KeyError:
-        name, version = prefix.rsplit('-', 1)
+        try:
+            name, version = prefix.rsplit('-', 1)
+        except ValueError as e:
+            raise Exception('unable to extract metadata')
         return Metadata(name, normalize(name), version, '')
     return parse_pkg_metadata(metadata)
 
@@ -147,7 +150,10 @@ def get_pkg_metadata(f):
         raise Exception('unknown extension')
 
 def get_pkg(f):
-    return Pkg(f, get_pkg_metadata(f))
+    try:
+        return Pkg(f, get_pkg_metadata(f))
+    except Exception as e:
+        raise Exception("error while processing '{}': {}".format(f, str(e)))
 
 def fix_pkg_names(pkgs):
     sort_fn = lambda p: p.metadata.trusted
@@ -565,7 +571,10 @@ def main():
         return 1
     cmd_class, _ = Cmd.registered[args.cmd]
     cmd = cmd_class()
-    cmd.run(args)
+    try:
+        cmd.run(args)
+    except Exception as e:
+        print("Failed to execute command '{}': {}".format(args.cmd, str(e)))
     return 0
 
 if __name__ == '__main__':
