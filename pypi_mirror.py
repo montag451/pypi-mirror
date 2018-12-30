@@ -169,6 +169,7 @@ def fix_pkg_names(pkgs):
 def download(pkgs,
              requirements=[],
              dest='.',
+             index_url=None,
              allow_binary=False,
              platform=None,
              python_version=None,
@@ -176,6 +177,8 @@ def download(pkgs,
              abi=None,
              pip='pip'):
     args = [pip, 'download', '-d', dest]
+    if index_url:
+        args += ['--index-url', index_url]
     if not allow_binary:
         args += ['--no-binary', ':all:']
     if platform or python_version or implementation or abi:
@@ -366,7 +369,11 @@ class DownloadCmd(Cmd):
 
     @classmethod
     def add_args(cls, parser):
-        # TODO: add an option to specify the index-url
+        parser.add_argument(
+            '-i',
+            '--index-url',
+            help='base URL of Python Package Index'
+        )
         parser.add_argument(
             '-p',
             '--pip-executable',
@@ -435,6 +442,7 @@ class DownloadCmd(Cmd):
         download_ = functools.partial(
             download,
             dest=args.download_dir,
+            index_url=args.index_url,
             allow_binary=args.binary,
             platform=args.platform,
             python_version=args.python_version,
@@ -575,6 +583,7 @@ def main():
         cmd.run(args)
     except Exception as e:
         print("Failed to execute command '{}': {}".format(args.cmd, str(e)))
+        return 1
     return 0
 
 if __name__ == '__main__':
