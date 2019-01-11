@@ -274,7 +274,7 @@ def create_mirror(download_dir='.', mirror_dir='.', pkgs=None):
         for pkg in pkgs:
             dest = os.path.join(pkg_dir, os.path.basename(pkg.file))
             try:
-                os.symlink(os.path.abspath(pkg.file), dest)
+                os.symlink(os.path.relpath(pkg.file, pkg_dir), dest)
             except FileExistsError:
                 pass
         pkg_html = generate_pkg_html(pkgs)
