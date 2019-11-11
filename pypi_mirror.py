@@ -12,11 +12,13 @@ import functools
 import traceback
 import tarfile
 import urllib.parse
+import urllib.request
 import abc
 import locale
 import json
 import glob
 import traceback
+import distutils.version
 
 metadata_ext = '.metadata.json'
 
@@ -300,6 +302,10 @@ def create_metadata_files(download_dir, overwrite=False):
             }
             json.dump(metadata, f)
 
+def sort_versions(versions, reverse=True):
+    sort_fn = lambda v: distutils.version.LooseVersion(v).version
+    return sorted(versions, reverse=reverse, key=sort_fn)
+
 class CmdMeta(abc.ABCMeta):
 
     _registered = {}
@@ -582,6 +588,66 @@ class WriteMetadataCmd(DownloadDirCmd):
     def run(self, args):
         super().run(args)
         create_metadata_files(args.download_dir, args.overwrite)
+
+class QueryCmd(Cmd):
+
+    __cmd_help__ = 'query PyPI to retrieve the versions of a package'
+
+    @classmethod
+    def add_args(cls, parser):
+        super().add_args(parser)
+        parser.add_argument(
+            '-n',
+            '--name',
+            required=True,
+            metavar='NAME',
+            help='get versions of package %(metavar)s'
+        )
+        parser.add_argument(
+            '-f',
+            '--filter',
+            default=r'^\d+(\.\d+)*$',
+            metavar='REGEX',
+            help='retrieve only versions matching %(metavar)s [%(default)s]'
+        )
+        parser.add_argument(
+            '-l',
+            '--latest',
+            type=int,
+            metavar='N',
+            help='retrieve only the latest %(metavar)s versions'
+        )
+        parser.add_argument(
+            '-u',
+            '--url',
+            default='https://pypi.org/pypi/{pkg}/json',
+            metavar='URL',
+            help='query URL to use [%(default)s]'
+        )
+        parser.add_argument(
+            '-o',
+            '--output-format',
+            choices=('oneline', 'json'),
+            default='oneline',
+            metavar='FMT',
+            help='output format [%(default)s]'
+        )
+
+    def run(self, args):
+        super().run(args)
+        url = args.url.format(pkg=args.name)
+        with urllib.request.urlopen(url) as resp:
+            pkg_info = json.loads(resp.read().decode())
+        versions = pkg_info['releases']
+        if args.filter is not None:
+            filter_ = re.compile(args.filter)
+            versions = filter(filter_.match, versions)
+        versions = itertools.islice(sort_versions(versions), args.latest)
+        if args.output_format == 'oneline':
+            for v in versions:
+                print(v)
+        elif args.output_format == 'json':
+            json.dump(list(versions), sys.stdout)
 
 def main():
     locale.setlocale(locale.LC_ALL, '')
