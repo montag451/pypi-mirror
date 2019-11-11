@@ -332,14 +332,35 @@ class Cmd(metaclass=CmdMeta):
 
     @abc.abstractmethod
     def run(self, args):
+        pass
+
+class DownloadDirCmd(Cmd):
+
+    __cmd_ignore__ = True
+
+    @classmethod
+    def add_args(cls, parser):
+        super().add_args(parser)
+        parser.add_argument(
+            '-d',
+            '--download-dir',
+            required=True,
+            metavar='DIR',
+            help='download directory'
+        )
+
+    @abc.abstractmethod
+    def run(self, args):
+        super().run(args)
         os.makedirs(args.download_dir, exist_ok=True)
 
-class ListCmd(Cmd):
+class ListCmd(DownloadDirCmd):
 
     __cmd_help__ = 'list packages'
 
     @classmethod
     def add_args(cls, parser):
+        super().add_args(parser)
         parser.add_argument(
             '--name-only',
             action='store_true',
@@ -364,12 +385,13 @@ class ListCmd(Cmd):
             for version in {p.metadata.version for p in pkgs}:
                 print('  {}'.format(version))
 
-class DownloadCmd(Cmd):
+class DownloadCmd(DownloadDirCmd):
 
     __cmd_help__ = 'download packages and their dependencies'
 
     @classmethod
     def add_args(cls, parser):
+        super().add_args(parser)
         parser.add_argument(
             '-i',
             '--index-url',
@@ -469,18 +491,19 @@ class DownloadCmd(Cmd):
             download_(pkgs, args.requirements)
         create_metadata_files(args.download_dir)
 
-class MirrorCmd(Cmd):
+class MirrorCmd(DownloadDirCmd):
 
     __cmd_ignore__ = True
 
     @classmethod
     def add_args(cls, parser):
+        super().add_args(parser)
         parser.add_argument(
             '-m',
             '--mirror-dir',
             required=True,
             metavar='DIR',
-            help='create the mirror into %(metavar)s'
+            help='mirror directory to use'
         )
 
     def run(self, args):
@@ -541,13 +564,14 @@ class DeleteCmd(MirrorCmd):
             new_pkgs.append(pkg)
         create_mirror(download_dir, mirror_dir, new_pkgs)
 
-class WriteMetadataCmd(Cmd):
+class WriteMetadataCmd(DownloadDirCmd):
 
     __cmd_name__ = 'write-metadata'
     __cmd_help__ = 'create metadata files'
 
     @classmethod
     def add_args(cls, parser):
+        super().add_args(parser)
         parser.add_argument(
             '-o',
             '--overwrite',
@@ -562,13 +586,6 @@ class WriteMetadataCmd(Cmd):
 def main():
     locale.setlocale(locale.LC_ALL, '')
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-d',
-        '--download-dir',
-        required=True,
-        metavar='DIR',
-        help='download directory'
-    )
     parser.add_argument(
         '--print-traceback',
         action='store_true',
