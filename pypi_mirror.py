@@ -19,6 +19,7 @@ import json
 import glob
 import traceback
 import distutils.version
+import shutil
 
 metadata_ext = '.metadata.json'
 
@@ -532,43 +533,90 @@ class DeleteCmd(MirrorCmd):
     def add_args(cls, parser):
         super().add_args(parser)
         parser.add_argument(
-            '-n',
-            '--name',
-            required=True,
-            metavar='NAME',
-            help='remove package with %(metavar)s'
+            'pkg',
+            nargs=1,
+            metavar='PKG',
+            help='remove package %(metavar)s'
         )
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             '-v',
             '--version',
             metavar='VERSION',
-            help='remove only the package version %(metavar)s'
+            help='remove only the version %(metavar)s'
+        )
+        group.add_argument(
+            '-k',
+            '--keep-latest',
+            type=int,
+            metavar='N',
+            help='remove all versions but the latest %(metavar)s versions'
+        )
+        parser.add_argument(
+            '--no-mirror-update',
+            action='store_true',
+            help='do not update the mirror'
+        )
+        parser.add_argument(
+            '--dry-run',
+            action='store_true',
+            help='do not removing anything, just show what would be done'
         )
 
     def run(self, args):
         super().run(args)
         download_dir = args.download_dir
         mirror_dir = args.mirror_dir
-        pkgs = list_pkgs(download_dir)
-        new_pkgs = []
-        for pkg in pkgs:
-            if pkg.metadata.name == args.name:
-                if (args.version is None or
-                    args.version == pkg.metadata.version):
-                    basename = os.path.basename(pkg.file)
-                    norm_name = pkg.metadata.norm_name
-                    try:
-                        os.unlink(os.path.join(mirror_dir, norm_name, basename))
-                    except FileNotFoundError:
-                        pass
-                    try:
-                        os.unlink(pkg.file + metadata_ext)
-                    except FileNotFoundError:
-                        pass
-                    os.unlink(pkg.file)
+        pkg_by_names = list_pkg_by_names(download_dir)
+        remaining_pkgs = []
+        to_remove = []
+        for pkg_name, pkgs in pkg_by_names:
+            if not pkg_name == args.pkg[0]:
+                remaining_pkgs.extend(pkgs)
+                continue
+            if args.version is not None:
+                for p in pkgs:
+                    if p.metadata.version == args.version:
+                        to_remove.append(p)
+                    else:
+                        remaining_pkgs.append(p)
+            elif args.keep_latest is not None:
+                pkgs = list(pkgs)
+                versions = sort_versions({p.metadata.version for p in pkgs})
+                latest_versions = versions[:args.keep_latest]
+                for p in pkgs:
+                    if p.metadata.version in latest_versions:
+                        remaining_pkgs.append(p)
+                    else:
+                        to_remove.append(p)
+            else:
+                to_remove.extend(pkgs)
+            for pkg in to_remove:
+                if args.dry_run:
+                    print("Remove '{}'".format(pkg.file))
                     continue
-            new_pkgs.append(pkg)
-        create_mirror(download_dir, mirror_dir, new_pkgs)
+                basename = os.path.basename(pkg.file)
+                norm_name = pkg.metadata.norm_name
+                pkg_mirror_dir = os.path.join(mirror_dir, norm_name)
+                try:
+                    os.unlink(os.path.join(pkg_mirror_dir, basename))
+                except FileNotFoundError:
+                    pass
+                try:
+                    nb_files = len(os.listdir(pkg_mirror_dir))
+                    if nb_files < 2:
+                        # The directory is empty or only the index
+                        # file is present
+                        shutil.rmtree(pkg_mirror_dir)
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.unlink(pkg.file + metadata_ext)
+                except FileNotFoundError:
+                    pass
+                os.unlink(pkg.file)
+        if to_remove and not args.no_mirror_update and not args.dry_run:
+            create_mirror(download_dir, mirror_dir, remaining_pkgs)
 
 class WriteMetadataCmd(DownloadDirCmd):
 
