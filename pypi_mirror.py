@@ -389,7 +389,8 @@ class ListCmd(DownloadDirCmd):
             print(pkg_name)
             if args.name is None and args.name_only:
                 continue
-            for version in {p.metadata.version for p in pkgs}:
+            versions = {p.metadata.version for p in pkgs}
+            for version in sort_versions(versions):
                 print('  {}'.format(version))
 
 class DownloadCmd(DownloadDirCmd):
@@ -457,9 +458,10 @@ class DownloadCmd(DownloadDirCmd):
                  'This option can be used multiple times.'
         )
         parser.add_argument(
-            'pkgs',
+            'pkg',
             nargs='*',
-            help='packages to download'
+            metavar='PKG',
+            help='package to download'
         )
 
     def run(self, args):
