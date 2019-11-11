@@ -16,6 +16,7 @@ import abc
 import locale
 import json
 import glob
+import traceback
 
 metadata_ext = '.metadata.json'
 
