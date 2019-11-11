@@ -568,6 +568,11 @@ def main():
         metavar='DIR',
         help='download directory'
     )
+    parser.add_argument(
+        '--print-traceback',
+        action='store_true',
+        help='print traceback on error'
+    )
     subparsers = parser.add_subparsers(dest='cmd', metavar='CMD')
     for cmd_name, (cmd_class, cmd_help) in Cmd.registered.items():
         cmd_parser = subparsers.add_parser(cmd_name, help=cmd_help)
@@ -583,6 +588,8 @@ def main():
         cmd.run(args)
     except Exception as e:
         print("Failed to execute command '{}': {}".format(args.cmd, str(e)))
+        if args.print_traceback:
+            traceback.print_exc()
         return 1
     return 0
 
