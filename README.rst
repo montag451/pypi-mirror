@@ -42,8 +42,8 @@ following:
 
 .. code:: sh
 
-   pypi-mirror -d downloads download requests
-   pypi-mirror -d downloads create -m simple
+   pypi-mirror download -d downloads requests
+   pypi-mirror create -d downloads -m simple
 
 The first command will create a ``downloads`` directory into the current
 directory and use ``pip`` to download the ``requests`` package and its
@@ -69,4 +69,14 @@ new mirror using the following command:
 
    pip install -i http://127.0.0.1:8000/simple requests
 
+About versioning
+================
+
+This package use `semver`_ to manage version numbering. It means that
+every times the major number is increased a backward incompatible
+change has been introduced in the API (the command line is an API). So
+be careful when upgrading to a new major release as it will surely
+break your scripts.
+
 .. _bandersnatch: https://github.com/pypa/bandersnatch.git
+.. _semver: https://semver.org/
