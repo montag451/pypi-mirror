@@ -647,10 +647,9 @@ class QueryCmd(Cmd):
     def add_args(cls, parser):
         super().add_args(parser)
         parser.add_argument(
-            '-n',
-            '--name',
-            required=True,
-            metavar='NAME',
+            'pkg',
+            nargs=1,
+            metavar='PKG',
             help='get versions of package %(metavar)s'
         )
         parser.add_argument(
@@ -685,7 +684,7 @@ class QueryCmd(Cmd):
 
     def run(self, args):
         super().run(args)
-        url = args.url.format(pkg=args.name)
+        url = args.url.format(pkg=args.pkg[0])
         with urllib.request.urlopen(url) as resp:
             pkg_info = json.loads(resp.read().decode())
         versions = pkg_info['releases']
