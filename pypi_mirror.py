@@ -482,7 +482,7 @@ class DownloadCmd(DownloadDirCmd):
             abi=args.abi,
             pip=args.pip_executable
         )
-        pkgs = args.pkgs
+        pkgs = args.pkg
         if not pkgs and not args.requirements:
             pkgs = list_pkg_names(args.download_dir)
         if args.keep_going:
