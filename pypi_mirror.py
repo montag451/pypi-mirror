@@ -20,6 +20,7 @@ import glob
 import traceback
 import distutils.version
 import shutil
+import posixpath
 
 metadata_ext = '.metadata.json'
 
@@ -90,7 +91,7 @@ def get_metadata_from_wheel(f):
     whl = zipfile.ZipFile(f)
     whl_name = os.path.basename(f)
     prefix = '-'.join(whl_name.split('-', 2)[:2])
-    metadata_file = os.path.join(prefix + '.dist-info', 'METADATA')
+    metadata_file = posixpath.join(prefix + '.dist-info', 'METADATA')
     try:
         metadata = whl.open(metadata_file).read()
     except KeyError:
