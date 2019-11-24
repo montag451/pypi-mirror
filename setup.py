@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='python-pypi-mirror',
-    version='4.0.1',
+    version='4.0.2',
     author='montag451',
     author_email='montag451@laposte.net',
     maintainer='montag451',
