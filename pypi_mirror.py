@@ -63,7 +63,7 @@ def parse_pkg_metadata(metadata):
     if not m:
         raise Exception('invalid metadata file')
     version = m.group(1).decode('utf-8').strip()
-    m = re.search(rb'^Home-page: (.*)$', metadata, re.MULTILINE)
+    m = re.search(rb'^Home-[pP]age: (.*)$', metadata, re.MULTILINE)
     if not m:
         raise Exception('invalid metadata file')
     homepage = m.group(1).decode('utf-8').strip()
