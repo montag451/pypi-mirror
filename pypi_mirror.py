@@ -17,7 +17,6 @@ import abc
 import locale
 import json
 import glob
-import traceback
 import distutils.version
 import shutil
 import posixpath
