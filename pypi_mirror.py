@@ -307,6 +307,12 @@ def sort_versions(versions, reverse=True):
     sort_fn = lambda v: distutils.version.LooseVersion(v).version
     return sorted(versions, reverse=reverse, key=sort_fn)
 
+def advertise_print_traceback():
+    print(
+        'To get further information re-run '
+        'the script with --print-traceback'
+    )
+
 class CmdMeta(abc.ABCMeta):
 
     _registered = {}
@@ -490,12 +496,24 @@ class DownloadCmd(DownloadDirCmd):
                 try:
                     download_([pkg])
                 except subprocess.CalledProcessError:
-                    traceback.print_exc()
+                    print(
+                        "Failed to download package '{}'".format(pkg)
+                    )
+                    if args.print_traceback:
+                        traceback.print_exc()
+                    else:
+                        advertise_print_traceback()
             for r in args.requirements:
                 try:
                     download_([], [r])
                 except subprocess.CalledProcessError:
-                    traceback.print_exc()
+                    print(
+                        "Failed to download requirements from '{}'".format(r)
+                    )
+                    if args.print_traceback:
+                        traceback.print_exc()
+                    else:
+                        advertise_print_traceback()
         else:
             download_(pkgs, args.requirements)
         create_metadata_files(args.download_dir)
@@ -723,6 +741,8 @@ def main():
         print("Failed to execute command '{}': {}".format(args.cmd, str(e)))
         if args.print_traceback:
             traceback.print_exc()
+        else:
+            advertise_print_traceback()
         return 1
     return 0
 
