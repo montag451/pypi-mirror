@@ -68,9 +68,7 @@ def parse_pkg_metadata(metadata):
         metadata,
         re.MULTILINE
     )
-    if not m:
-        raise Exception("invalid metadata file, no homepage found")
-    homepage = m.group(1).decode('utf-8').strip()
+    homepage = m.group(1).decode('utf-8').strip() if m else ''
     return Metadata(name, normalize(name), version, homepage)
 
 def get_metadata_from_archive(f, extension, extract_fn, member='PKG-INFO'):
