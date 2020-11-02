@@ -57,15 +57,19 @@ def normalize(name):
 def parse_pkg_metadata(metadata):
     m = re.search(rb'^Name: (.*)$', metadata, re.MULTILINE)
     if not m:
-        raise Exception('invalid metadata file')
+        raise Exception("invalid metadata file, missing 'Name' field")
     name = m.group(1).decode('utf-8').strip()
     m = re.search(rb'^Version: (.*)$', metadata, re.MULTILINE)
     if not m:
-        raise Exception('invalid metadata file')
+        raise Exception("invalid metadata file, missing 'Version' field")
     version = m.group(1).decode('utf-8').strip()
-    m = re.search(rb'^Home-[pP]age: (.*)$', metadata, re.MULTILINE)
+    m = re.search(
+        rb'^(?:Home-[pP]age:|Project-URL: [Hh]ome-?[pP]age,) (.*)$',
+        metadata,
+        re.MULTILINE
+    )
     if not m:
-        raise Exception('invalid metadata file')
+        raise Exception("invalid metadata file, no homepage found")
     homepage = m.group(1).decode('utf-8').strip()
     return Metadata(name, normalize(name), version, homepage)
 
