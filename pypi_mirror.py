@@ -267,7 +267,7 @@ def write_html_index(d, html):
     with open(os.path.join(d, 'index.html'), 'w') as f:
         f.write(html)
 
-def create_mirror(download_dir='.', mirror_dir='.', pkgs=None):
+def create_mirror(download_dir='.', mirror_dir='.', pkgs=None, copy=False):
     pkgs = pkgs if pkgs is not None else list_pkgs(download_dir, False)
     sort_fn = lambda p: p.metadata.norm_name
     sorted_pkgs = sorted(pkgs, key=sort_fn)
@@ -279,10 +279,13 @@ def create_mirror(download_dir='.', mirror_dir='.', pkgs=None):
         fix_pkg_names(pkgs)
         for pkg in pkgs:
             dest = os.path.join(pkg_dir, os.path.basename(pkg.file))
-            try:
-                os.symlink(os.path.relpath(pkg.file, pkg_dir), dest)
-            except FileExistsError:
-                pass
+            if copy:
+                shutil.copy(pkg.file, dest)
+            else:
+                try:
+                    os.symlink(os.path.relpath(pkg.file, pkg_dir), dest)
+                except FileExistsError:
+                    pass
         pkg_html = generate_pkg_html(pkgs)
         write_html_index(pkg_dir, pkg_html)
         pkg_names.append((pkg_norm_name, pkgs[0].metadata.name))
@@ -534,6 +537,12 @@ class MirrorCmd(DownloadDirCmd):
             metavar='DIR',
             help='mirror directory to use'
         )
+        parser.add_argument(
+            '-c',
+            '--copy',
+            action='store_true',
+            help='copy instead of symlinking packages'
+        )
 
     def run(self, args):
         super().run(args)
@@ -545,7 +554,7 @@ class CreateCmd(MirrorCmd):
 
     def run(self, args):
         super().run(args)
-        create_mirror(args.download_dir, args.mirror_dir)
+        create_mirror(args.download_dir, args.mirror_dir, copy=args.copy)
 
 class DeleteCmd(MirrorCmd):
 
@@ -638,7 +647,7 @@ class DeleteCmd(MirrorCmd):
                     pass
                 os.unlink(pkg.file)
         if to_remove and not args.no_mirror_update and not args.dry_run:
-            create_mirror(download_dir, mirror_dir, remaining_pkgs)
+            create_mirror(download_dir, mirror_dir, remaining_pkgs, args.copy)
 
 class WriteMetadataCmd(DownloadDirCmd):
 
