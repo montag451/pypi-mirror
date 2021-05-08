@@ -247,7 +247,7 @@ def generate_root_html(pkg_names):
     {}
   </body>
 </html>"""
-    anchor_tmpl = '<a href="{0}">{1}</a>'
+    anchor_tmpl = '<a href="{0}/index.html">{1}</a>'
     anchors = "\n    ".join(
         anchor_tmpl.format(norm_name, name) for norm_name, name in pkg_names
     )
