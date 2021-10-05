@@ -183,6 +183,7 @@ def download(
     requirements=[],
     dest=".",
     index_url=None,
+    proxy=None,
     allow_binary=False,
     platform=None,
     python_version=None,
@@ -193,6 +194,8 @@ def download(
     args = [pip, "download", "-d", dest]
     if index_url:
         args += ["--index-url", index_url]
+    if proxy:
+        args += ["--proxy", proxy]
     if not allow_binary:
         args += ["--no-binary", ":all:"]
     if platform or python_version or implementation or abi:
@@ -427,6 +430,10 @@ class DownloadCmd(DownloadDirCmd):
             "-i", "--index-url", help="base URL of Python Package Index"
         )
         parser.add_argument(
+            "--proxy",
+            help="Specify a proxy in the form [user:passwd@]proxy.server:port",
+        )
+        parser.add_argument(
             "-p",
             "--pip-executable",
             default="pip",
@@ -488,6 +495,7 @@ class DownloadCmd(DownloadDirCmd):
             download,
             dest=args.download_dir,
             index_url=args.index_url,
+            proxy=args.proxy,
             allow_binary=args.binary,
             platform=args.platform,
             python_version=args.python_version,
