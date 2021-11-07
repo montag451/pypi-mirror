@@ -404,19 +404,27 @@ class ListCmd(DownloadDirCmd):
         parser.add_argument(
             "-n", "--name", metavar="NAME", help="list only the versions of %(metavar)s"
         )
+        parser.add_argument("-j", "--json", action="store_true", help="JSON output")
 
     def run(self, args):
         super().run(args)
         pkg_by_names = list_pkg_by_names(args.download_dir)
+        all_pkgs = []
         for pkg_name, pkgs in pkg_by_names:
             if args.name is not None and pkg_name != args.name:
                 continue
-            print(pkg_name)
-            if args.name is None and args.name_only:
-                continue
-            versions = {p.metadata.version for p in pkgs}
-            for version in sort_versions(versions):
-                print("  {}".format(version))
+            versions = sort_versions({p.metadata.version for p in pkgs})
+            all_pkgs.append({"name": pkg_name, "versions": versions})
+        if args.json:
+            json.dump(all_pkgs, sys.stdout)
+            print()
+        else:
+            for pkg in all_pkgs:
+                print(pkg["name"])
+                if args.name is None and args.name_only:
+                    continue
+                for version in pkg["versions"]:
+                    print("  {}".format(version))
 
 
 class DownloadCmd(DownloadDirCmd):
