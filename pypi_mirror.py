@@ -189,6 +189,7 @@ def download(
     python_version=None,
     implementation=None,
     abi=None,
+    no_build_isolation=None,
     pip="pip",
 ):
     args = [pip, "download", "-d", dest]
@@ -208,6 +209,8 @@ def download(
         args += ["--implementation", implementation]
     if abi:
         args += ["--abi", abi]
+    if no_build_isolation:
+        args += ["--no-build-isolation"]
     for r in requirements:
         args += ["-r", r]
     args += pkgs
@@ -484,6 +487,14 @@ class DownloadCmd(DownloadDirCmd):
             "abi %(metavar)s. This option implies --binary.",
         )
         parser.add_argument(
+            "--no-build-isolation",
+            action="store_true",
+            help="Disable isolation when building a modern source "
+            "distribution. Build dependencies specified by "
+            "PEP 518 must be already installed if this option "
+            "is used.",
+        )
+        parser.add_argument(
             "-r",
             "--requirement",
             dest="requirements",
@@ -509,6 +520,7 @@ class DownloadCmd(DownloadDirCmd):
             python_version=args.python_version,
             implementation=args.implementation,
             abi=args.abi,
+            no_build_isolation=args.no_build_isolation,
             pip=args.pip_executable,
         )
         pkgs = args.pkg
