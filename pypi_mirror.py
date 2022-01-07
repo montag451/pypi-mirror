@@ -80,7 +80,7 @@ def get_metadata_from_archive(f, extension, extract_fn, member="PKG-INFO"):
     except KeyError:
         try:
             name, version = prefix.rsplit("-", 1)
-        except ValueError as e:
+        except ValueError:
             raise Exception("unable to extract metadata")
         return Metadata(name, normalize(name), version, "")
     return parse_pkg_metadata(metadata)
