@@ -202,13 +202,15 @@ def download(
     if platform or python_version or implementation or abi:
         args += ["--only-binary", ":all:"]
     if platform:
-        args += ["--platform", platform]
+        for p in platform:
+            args += ["--platform", p]
     if python_version:
         args += ["--python-version", python_version]
     if implementation:
         args += ["--implementation", implementation]
     if abi:
-        args += ["--abi", abi]
+        for a in abi:
+            args += ["--abi", a]
     if no_build_isolation:
         args += ["--no-build-isolation"]
     for r in requirements:
@@ -464,6 +466,7 @@ class DownloadCmd(DownloadDirCmd):
         )
         parser.add_argument(
             "--platform",
+            action="append",
             metavar="PLATFORM",
             help="only download wheels compatible with %(metavar)s. "
             "This option implies --binary.",
@@ -482,6 +485,7 @@ class DownloadCmd(DownloadDirCmd):
         )
         parser.add_argument(
             "--abi",
+            action="append",
             metavar="ABI",
             help="only download wheels compatible with Python "
             "abi %(metavar)s. This option implies --binary.",
