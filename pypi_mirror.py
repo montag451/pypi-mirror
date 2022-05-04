@@ -152,7 +152,7 @@ def get_metadata_from_zip(f: str) -> Metadata:
 def get_metadata_from_tar(f: str, extension: str = ".tar.gz") -> Metadata:
     tar = tarfile.open(f)
 
-    def get_member(name):
+    def get_member(name: str) -> IO[bytes]:
         f = tar.extractfile(name)
         if f is None:
             raise KeyError(name)
@@ -627,7 +627,7 @@ class CreateCmd(MirrorCmd):
 
     __cmd_help__ = "create the mirror"
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         create_mirror(args.download_dir, args.mirror_dir, copy=args.copy)
 
