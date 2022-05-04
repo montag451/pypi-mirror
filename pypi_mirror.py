@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import abc
 import argparse
 import distutils.version
@@ -20,15 +22,39 @@ import traceback
 import urllib.parse
 import urllib.request
 import zipfile
+from typing import (
+    IO,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Final,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    cast,
+)
 
-metadata_ext = ".metadata.json"
+metadata_ext: Final = ".metadata.json"
 
 
 class Metadata:
 
     __slots__ = ["name", "norm_name", "version", "homepage", "trusted", "sha256"]
 
-    def __init__(self, name, norm_name, version, homepage, trusted=True, sha256=""):
+    def __init__(
+        self,
+        name: str,
+        norm_name: str,
+        version: str,
+        homepage: str,
+        trusted: bool = True,
+        sha256: str = "",
+    ) -> None:
         self.name = name
         self.norm_name = norm_name
         self.version = version
@@ -41,16 +67,16 @@ class Pkg:
 
     __slots__ = ["file", "metadata"]
 
-    def __init__(self, file_, metadata):
+    def __init__(self, file_: str, metadata: Metadata) -> None:
         self.file = file_
         self.metadata = metadata
 
 
-def normalize(name):
+def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def parse_pkg_metadata(metadata):
+def parse_pkg_metadata(metadata: bytes) -> Metadata:
     m = re.search(rb"^Name: (.*)$", metadata, re.MULTILINE)
     if not m:
         raise Exception("invalid metadata file, missing 'Name' field")
@@ -68,7 +94,12 @@ def parse_pkg_metadata(metadata):
     return Metadata(name, normalize(name), version, homepage)
 
 
-def get_metadata_from_archive(f, extension, extract_fn, member="PKG-INFO"):
+def get_metadata_from_archive(
+    f: str,
+    extension: str,
+    extract_fn: Callable[[str], IO[bytes]],
+    member: str = "PKG-INFO",
+) -> Metadata:
     f_name = os.path.basename(f)
     idx = f_name.find(extension)
     if idx == -1:
@@ -86,16 +117,16 @@ def get_metadata_from_archive(f, extension, extract_fn, member="PKG-INFO"):
     return parse_pkg_metadata(metadata)
 
 
-def get_metadata_from_wheel(f):
+def get_metadata_from_wheel(f: str) -> Metadata:
     whl = zipfile.ZipFile(f)
     whl_name = os.path.basename(f)
     prefix = "-".join(whl_name.split("-", 2)[:2])
     metadata_file = posixpath.join(prefix + ".dist-info", "METADATA")
     try:
-        metadata = whl.open(metadata_file).read()
+        raw_metadata = whl.open(metadata_file).read()
     except KeyError:
         raise Exception("metadata file not found")
-    metadata = parse_pkg_metadata(metadata)
+    metadata = parse_pkg_metadata(raw_metadata)
     if not whl_name.startswith(metadata.name):
         # It means that the package name contains hyphens or
         # underscores. Try to find out the real name of the package
@@ -113,17 +144,24 @@ def get_metadata_from_wheel(f):
     return metadata
 
 
-def get_metadata_from_zip(f):
+def get_metadata_from_zip(f: str) -> Metadata:
     zip_ = zipfile.ZipFile(f)
-    return get_metadata_from_archive(f, ".zip", zip_.open)
+    return get_metadata_from_archive(f, ".zip", lambda m: zip_.open(m))
 
 
-def get_metadata_from_tar(f, extension=".tar.gz"):
+def get_metadata_from_tar(f: str, extension: str = ".tar.gz") -> Metadata:
     tar = tarfile.open(f)
-    return get_metadata_from_archive(f, extension, tar.extractfile)
+
+    def get_member(name):
+        f = tar.extractfile(name)
+        if f is None:
+            raise KeyError(name)
+        return f
+
+    return get_metadata_from_archive(f, extension, get_member)
 
 
-_metadata_getter = {
+_metadata_getter: Dict[str, Callable[[str], Metadata]] = {
     ".whl": get_metadata_from_wheel,
     ".zip": get_metadata_from_zip,
     ".tar.gz": get_metadata_from_tar,
@@ -131,7 +169,7 @@ _metadata_getter = {
 }
 
 
-def get_metadata_from_json(f):
+def get_metadata_from_json(f: str) -> Optional[Metadata]:
     metadata = None
     try:
         metadata_json = json.load(open(f + metadata_ext))
@@ -145,9 +183,9 @@ def get_metadata_from_json(f):
     return metadata
 
 
-def get_pkg_metadata(f):
+def get_pkg_metadata(f: str) -> Metadata:
     metadata = get_metadata_from_json(f)
-    if metadata:
+    if metadata is not None:
         return metadata
     for extension, getter in _metadata_getter.items():
         if f.endswith(extension):
@@ -159,14 +197,14 @@ def get_pkg_metadata(f):
         raise Exception("unknown extension")
 
 
-def get_pkg(f):
+def get_pkg(f: str) -> Pkg:
     try:
         return Pkg(f, get_pkg_metadata(f))
     except Exception as e:
         raise Exception("error while processing {!r}: {}".format(f, str(e)))
 
 
-def fix_pkg_names(pkgs):
+def fix_pkg_names(pkgs: Iterable[Pkg]) -> None:
     sort_fn = lambda p: p.metadata.trusted
     sorted_pkgs = sorted(pkgs, key=sort_fn, reverse=True)
     trusted_name = None
@@ -179,19 +217,19 @@ def fix_pkg_names(pkgs):
 
 
 def download(
-    pkgs,
-    requirements=[],
-    dest=".",
-    index_url=None,
-    proxy=None,
-    allow_binary=False,
-    platform=None,
-    python_version=None,
-    implementation=None,
-    abi=None,
-    no_build_isolation=None,
-    pip="pip",
-):
+    pkgs: Iterable[str],
+    requirements: Iterable[str] = [],
+    dest: str = ".",
+    index_url: Optional[str] = None,
+    proxy: Optional[str] = None,
+    allow_binary: Optional[bool] = False,
+    platform: Optional[str] = None,
+    python_version: Optional[str] = None,
+    implementation: Optional[str] = None,
+    abi: Optional[str] = None,
+    no_build_isolation: Optional[bool] = False,
+    pip: str = "pip",
+) -> None:
     args = [pip, "download", "-d", dest]
     if index_url:
         args += ["--index-url", index_url]
@@ -219,11 +257,11 @@ def download(
     subprocess.check_call(args)
 
 
-def list_dir(d, test=os.path.isfile):
+def list_dir(d: str, test: Callable[[str], bool] = os.path.isfile) -> List[str]:
     return [os.path.join(d, f) for f in os.listdir(d) if test(os.path.join(d, f))]
 
 
-def list_pkgs(download_dir, fix_names=True):
+def list_pkgs(download_dir: str, fix_names: bool = True) -> List[Pkg]:
     test = lambda f: not f.endswith(metadata_ext)
     all_pkgs = [get_pkg(f) for f in list_dir(download_dir, test)]
     if fix_names:
@@ -234,17 +272,17 @@ def list_pkgs(download_dir, fix_names=True):
     return all_pkgs
 
 
-def list_pkg_by_names(download_dir):
+def list_pkg_by_names(download_dir: str) -> Iterator[Tuple[str, Iterator[Pkg]]]:
     sort_fn = lambda p: locale.strxfrm(p.metadata.name)
     pkgs = sorted(list_pkgs(download_dir), key=sort_fn)
     return itertools.groupby(pkgs, lambda p: p.metadata.name)
 
 
-def list_pkg_names(download_dir):
+def list_pkg_names(download_dir: str) -> List[str]:
     return [pkg_name for pkg_name, _ in list_pkg_by_names(download_dir)]
 
 
-def generate_root_html(pkg_names):
+def generate_root_html(pkg_names: Iterable[Tuple[str, str]]) -> str:
     html_tmpl = """\
 <!DOCTYPE html>
 <html>
@@ -262,7 +300,7 @@ def generate_root_html(pkg_names):
     return html_tmpl.format(anchors)
 
 
-def generate_pkg_html(pkgs):
+def generate_pkg_html(pkgs: Sequence[Pkg]) -> str:
     html_tmpl = """\
 <!DOCTYPE html>
 <html>
@@ -282,12 +320,17 @@ def generate_pkg_html(pkgs):
     return html_tmpl.format(pkgs[0].metadata.name, "\n    ".join(anchors))
 
 
-def write_html_index(d, html):
+def write_html_index(d: str, html: str) -> None:
     with open(os.path.join(d, "index.html"), "w") as f:
         f.write(html)
 
 
-def create_mirror(download_dir=".", mirror_dir=".", pkgs=None, copy=False):
+def create_mirror(
+    download_dir: str = ".",
+    mirror_dir: str = ".",
+    pkgs: Optional[Iterable[Pkg]] = None,
+    copy: bool = False,
+) -> None:
     pkgs = pkgs if pkgs is not None else list_pkgs(download_dir, False)
     sort_fn = lambda p: p.metadata.norm_name
     sorted_pkgs = sorted(pkgs, key=sort_fn)
@@ -313,7 +356,7 @@ def create_mirror(download_dir=".", mirror_dir=".", pkgs=None, copy=False):
     write_html_index(mirror_dir, root_html)
 
 
-def create_metadata_files(download_dir, overwrite=False):
+def create_metadata_files(download_dir: str, overwrite: bool = False) -> None:
     if overwrite:
         metadata_glob = os.path.join(download_dir, "*" + metadata_ext)
         for metadata_file in glob.glob(metadata_glob):
@@ -329,20 +372,20 @@ def create_metadata_files(download_dir, overwrite=False):
             json.dump(metadata, f)
 
 
-def sort_versions(versions, reverse=True):
+def sort_versions(versions: Iterable[str], reverse: bool = True) -> List[str]:
     sort_fn = lambda v: distutils.version.LooseVersion(v).version
     return sorted(versions, reverse=reverse, key=sort_fn)
 
 
-def advertise_print_traceback():
+def advertise_print_traceback() -> None:
     print("To get further information re-run the script with --print-traceback")
 
 
 class CmdMeta(abc.ABCMeta):
 
-    _registered = {}
+    _registered: ClassVar[Dict[str, Tuple[Type[Cmd], str]]] = {}
 
-    def __new__(cls, name, bases, ns):
+    def __new__(cls, name: str, bases: Tuple[type, ...], ns: Dict[str, Any]) -> CmdMeta:
         c = super().__new__(cls, name, bases, ns)
         ignore = ns.get("__cmd_ignore__", False)
         if ignore:
@@ -354,22 +397,22 @@ class CmdMeta(abc.ABCMeta):
                 cmd_name = m.group(1).lower()
         if cmd_name:
             cmd_help = ns.get("__cmd_help__", cmd_name)
-            cls._registered[cmd_name] = c, cmd_help
+            cls._registered[cmd_name] = cast(Type[Cmd], c), cmd_help
         return c
 
     @property
-    def registered(cls):
+    def registered(cls) -> Dict[str, Tuple[Type[Cmd], str]]:
         return cls._registered
 
 
 class Cmd(metaclass=CmdMeta):
     @classmethod
     @abc.abstractmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         pass
 
     @abc.abstractmethod
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         pass
 
 
@@ -378,7 +421,7 @@ class DownloadDirCmd(Cmd):
     __cmd_ignore__ = True
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "-d",
@@ -389,7 +432,7 @@ class DownloadDirCmd(Cmd):
         )
 
     @abc.abstractmethod
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         os.makedirs(args.download_dir, exist_ok=True)
 
@@ -399,7 +442,7 @@ class ListCmd(DownloadDirCmd):
     __cmd_help__ = "list packages"
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "--name-only",
@@ -411,7 +454,7 @@ class ListCmd(DownloadDirCmd):
         )
         parser.add_argument("-j", "--json", action="store_true", help="JSON output")
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         pkg_by_names = list_pkg_by_names(args.download_dir)
         all_pkgs = []
@@ -437,7 +480,7 @@ class DownloadCmd(DownloadDirCmd):
     __cmd_help__ = "download packages and their dependencies"
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "-i", "--index-url", help="base URL of Python Package Index"
@@ -510,7 +553,7 @@ class DownloadCmd(DownloadDirCmd):
         )
         parser.add_argument("pkg", nargs="*", metavar="PKG", help="package to download")
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         if args.platform or args.python_version or args.implementation or args.abi:
             args.binary = True
@@ -559,7 +602,7 @@ class MirrorCmd(DownloadDirCmd):
     __cmd_ignore__ = True
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "-m",
@@ -575,7 +618,7 @@ class MirrorCmd(DownloadDirCmd):
             help="copy instead of symlinking packages",
         )
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         os.makedirs(args.mirror_dir, exist_ok=True)
 
@@ -594,7 +637,7 @@ class DeleteCmd(MirrorCmd):
     __cmd_help__ = "delete a package, use at your own risk!"
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "pkg", nargs=1, metavar="PKG", help="remove package %(metavar)s"
@@ -622,12 +665,12 @@ class DeleteCmd(MirrorCmd):
             help="do not removing anything, just show what would be done",
         )
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         download_dir = args.download_dir
         mirror_dir = args.mirror_dir
         pkg_by_names = list_pkg_by_names(download_dir)
-        remaining_pkgs = []
+        remaining_pkgs: List[Pkg] = []
         to_remove = []
         for pkg_name, pkgs in pkg_by_names:
             if not pkg_name == args.pkg[0]:
@@ -640,10 +683,10 @@ class DeleteCmd(MirrorCmd):
                     else:
                         remaining_pkgs.append(p)
             elif args.keep_latest is not None:
-                pkgs = list(pkgs)
-                versions = sort_versions({p.metadata.version for p in pkgs})
+                pkgs_as_list = list(pkgs)
+                versions = sort_versions({p.metadata.version for p in pkgs_as_list})
                 latest_versions = versions[: args.keep_latest]
-                for p in pkgs:
+                for p in pkgs_as_list:
                     if p.metadata.version in latest_versions:
                         remaining_pkgs.append(p)
                     else:
@@ -684,13 +727,13 @@ class WriteMetadataCmd(DownloadDirCmd):
     __cmd_help__ = "create metadata files"
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "-o", "--overwrite", action="store_true", help="overwrite metadata files"
         )
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         create_metadata_files(args.download_dir, args.overwrite)
 
@@ -700,7 +743,7 @@ class QueryCmd(Cmd):
     __cmd_help__ = "query PyPI to retrieve the versions of a package"
 
     @classmethod
-    def add_args(cls, parser):
+    def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
             "pkg", nargs=1, metavar="PKG", help="get versions of package %(metavar)s"
@@ -735,7 +778,7 @@ class QueryCmd(Cmd):
             help="output format [%(default)s]",
         )
 
-    def run(self, args):
+    def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         url = args.url.format(pkg=args.pkg[0])
         with urllib.request.urlopen(url) as resp:
@@ -752,7 +795,7 @@ class QueryCmd(Cmd):
             json.dump(list(versions), sys.stdout)
 
 
-def main():
+def main() -> int:
     locale.setlocale(locale.LC_ALL, "")
     parser = argparse.ArgumentParser()
     parser.add_argument(
