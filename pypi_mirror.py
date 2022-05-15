@@ -28,7 +28,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Final,
     Iterable,
     Iterator,
     List,
