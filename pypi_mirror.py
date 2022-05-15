@@ -39,7 +39,7 @@ from typing import (
     cast,
 )
 
-metadata_ext: Final = ".metadata.json"
+metadata_ext = ".metadata.json"
 
 
 class Metadata:
