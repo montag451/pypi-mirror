@@ -120,10 +120,15 @@ def get_metadata_from_wheel(f: str) -> Metadata:
     whl = zipfile.ZipFile(f)
     whl_name = os.path.basename(f)
     prefix = "-".join(whl_name.split("-", 2)[:2])
-    metadata_file = posixpath.join(prefix + ".dist-info", "METADATA")
-    try:
-        raw_metadata = whl.open(metadata_file).read()
-    except KeyError:
+    prefixes = [prefix, prefix.lower()]
+    for prefix in prefixes:
+        metadata_file = posixpath.join(prefix + ".dist-info", "METADATA")
+        try:
+            raw_metadata = whl.open(metadata_file).read()
+        except KeyError:
+            continue
+        break
+    else:
         raise Exception("metadata file not found")
     metadata = parse_pkg_metadata(raw_metadata)
     if not whl_name.startswith(metadata.name):
