@@ -42,7 +42,6 @@ metadata_ext = ".metadata.json"
 
 
 class Metadata:
-
     __slots__ = ["name", "norm_name", "version", "homepage", "trusted", "sha256"]
 
     def __init__(
@@ -63,7 +62,6 @@ class Metadata:
 
 
 class Pkg:
-
     __slots__ = ["file", "metadata"]
 
     def __init__(self, file_: str, metadata: Metadata) -> None:
@@ -389,7 +387,6 @@ def advertise_print_traceback() -> None:
 
 
 class CmdMeta(abc.ABCMeta):
-
     _registered: ClassVar[Dict[str, Tuple[Type[Cmd], str]]] = {}
 
     def __new__(cls, name: str, bases: Tuple[type, ...], ns: Dict[str, Any]) -> CmdMeta:
@@ -424,7 +421,6 @@ class Cmd(metaclass=CmdMeta):
 
 
 class DownloadDirCmd(Cmd):
-
     __cmd_ignore__ = True
 
     @classmethod
@@ -445,7 +441,6 @@ class DownloadDirCmd(Cmd):
 
 
 class ListCmd(DownloadDirCmd):
-
     __cmd_help__ = "list packages"
 
     @classmethod
@@ -483,7 +478,6 @@ class ListCmd(DownloadDirCmd):
 
 
 class DownloadCmd(DownloadDirCmd):
-
     __cmd_help__ = "download packages and their dependencies"
 
     @classmethod
@@ -615,7 +609,6 @@ class DownloadCmd(DownloadDirCmd):
 
 
 class MirrorCmd(DownloadDirCmd):
-
     __cmd_ignore__ = True
 
     @classmethod
@@ -641,7 +634,6 @@ class MirrorCmd(DownloadDirCmd):
 
 
 class CreateCmd(MirrorCmd):
-
     __cmd_help__ = "create the mirror"
 
     def run(self, args: argparse.Namespace) -> None:
@@ -650,7 +642,6 @@ class CreateCmd(MirrorCmd):
 
 
 class DeleteCmd(MirrorCmd):
-
     __cmd_help__ = "delete a package, use at your own risk!"
 
     @classmethod
@@ -739,7 +730,6 @@ class DeleteCmd(MirrorCmd):
 
 
 class WriteMetadataCmd(DownloadDirCmd):
-
     __cmd_name__ = "write-metadata"
     __cmd_help__ = "create metadata files"
 
@@ -756,7 +746,6 @@ class WriteMetadataCmd(DownloadDirCmd):
 
 
 class QueryCmd(Cmd):
-
     __cmd_help__ = "query PyPI to retrieve the versions of a package"
 
     @classmethod
