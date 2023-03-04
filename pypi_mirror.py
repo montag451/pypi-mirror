@@ -233,10 +233,13 @@ def download(
     abi: Optional[str] = None,
     no_build_isolation: Optional[bool] = False,
     pip: str = "pip",
+    extra_index_url: Optional[str] = None,
 ) -> None:
     args = [pip, "download", "-d", dest]
     if index_url:
         args += ["--index-url", index_url]
+    if extra_index_url:
+        args += ["--extra-index-url", extra_index_url]
     if proxy:
         args += ["--proxy", proxy]
     if not allow_binary:
@@ -488,6 +491,10 @@ class DownloadCmd(DownloadDirCmd):
         super().add_args(parser)
         parser.add_argument(
             "-i", "--index-url", help="base URL of Python Package Index"
+        parser.add_argument(
+            "--extra-index-url",
+            help="Extra URLs of package indexes to use in addition to "
+            "--index-url. Should follow the same rules as --index-url.",
         )
         parser.add_argument(
             "--proxy",
@@ -573,6 +580,7 @@ class DownloadCmd(DownloadDirCmd):
             abi=args.abi,
             no_build_isolation=args.no_build_isolation,
             pip=args.pip_executable,
+            extra_index_url=args.extra_index_url,
         )
         pkgs = args.pkg
         if not pkgs and not args.requirements:
