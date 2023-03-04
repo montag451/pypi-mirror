@@ -490,7 +490,12 @@ class DownloadCmd(DownloadDirCmd):
     def add_args(cls, parser: argparse.ArgumentParser) -> None:
         super().add_args(parser)
         parser.add_argument(
-            "-i", "--index-url", help="base URL of Python Package Index"
+            "-i",
+            "--index-url",
+            help="Base URL of the Python Package Index (default https://pypi.org/simple). "
+            "This should point to a repository compliant with PEP 503 (the simple repository API) "
+            "or a local directory laid out in the same format.",
+        )
         parser.add_argument(
             "--extra-index-url",
             help="Extra URLs of package indexes to use in addition to "
