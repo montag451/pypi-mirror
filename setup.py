@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="python-pypi-mirror",
-    version="5.0.2",
+    version="5.1.0",
     author="montag451",
     author_email="montag451@laposte.net",
     maintainer="montag451",
@@ -19,6 +19,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     py_modules=["pypi_mirror"],
     entry_points={"console_scripts": ["pypi-mirror=pypi_mirror:main"]},
