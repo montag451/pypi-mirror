@@ -18,6 +18,12 @@ You can install ``pypi-mirror`` using ``pip``:
 
    pip install python-pypi-mirror
 
+Or using ``conda``:
+
+.. code:: sh
+
+    conda install -c conda-forge python-pypi-mirror 
+
 How to use it?
 ==============
 
