@@ -455,12 +455,21 @@ class ListCmd(DownloadDirCmd):
             "-n", "--name", metavar="NAME", help="list only the versions of %(metavar)s"
         )
         parser.add_argument("-j", "--json", action="store_true", help="JSON output")
+        parser.add_argument(
+            "--use-norm-name",
+            action="store_true",
+            help="use the normalized name instead of the regular name",
+        )
 
     def run(self, args: argparse.Namespace) -> None:
         super().run(args)
         pkg_by_names = list_pkg_by_names(args.download_dir)
         all_pkgs = []
         for pkg_name, pkgs in pkg_by_names:
+            if args.use_norm_name:
+                pkg = next(pkgs)
+                pkg_name = pkg.metadata.norm_name
+                pkgs = itertools.chain([pkg], pkgs)
             if args.name is not None and pkg_name != args.name:
                 continue
             versions = sort_versions({p.metadata.version for p in pkgs})
