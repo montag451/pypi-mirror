@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import abc
 import argparse
-import distutils.version
 import functools
 import glob
 import hashlib
@@ -37,6 +36,19 @@ from typing import (
     Type,
     cast,
 )
+
+_version_re = re.compile(r"(\d+ | [a-z]+ | \.)", re.VERBOSE)
+
+
+def _parse_version(version: str) -> List[str | int]:
+    components = [x for x in _version_re.split(version) if x and x != "."]
+    for i, obj in enumerate(components):
+        try:
+            components[i] = int(obj)
+        except ValueError:
+            pass
+    return components
+
 
 metadata_ext = ".metadata.json"
 
@@ -378,7 +390,7 @@ def create_metadata_files(download_dir: str, overwrite: bool = False) -> None:
 
 
 def sort_versions(versions: Iterable[str], reverse: bool = True) -> List[str]:
-    sort_fn = lambda v: distutils.version.LooseVersion(v).version
+    sort_fn = lambda v: _parse_version(v)
     return sorted(versions, reverse=reverse, key=sort_fn)
 
 
