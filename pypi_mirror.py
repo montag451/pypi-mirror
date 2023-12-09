@@ -490,11 +490,11 @@ class ListCmd(DownloadDirCmd):
             json.dump(all_pkgs, sys.stdout)
             print()
         else:
-            for pkg in all_pkgs:
-                print(pkg["name"])
+            for pkg_as_dict in all_pkgs:
+                print(pkg_as_dict["name"])
                 if args.name is None and args.name_only:
                     continue
-                for version in pkg["versions"]:
+                for version in pkg_as_dict["versions"]:
                     print("  {}".format(version))
 
 
