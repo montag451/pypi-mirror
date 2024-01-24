@@ -244,12 +244,15 @@ def download(
     no_build_isolation: Optional[bool] = False,
     pip: str = "pip",
     extra_index_url: Optional[str] = None,
+    find_links: Optional[str] = None,
 ) -> None:
     args = [pip, "download", "-d", dest]
     if index_url:
         args += ["--index-url", index_url]
     if extra_index_url:
         args += ["--extra-index-url", extra_index_url]
+    if find_links:
+        args += ["--find-links", find_links]
     if proxy:
         args += ["--proxy", proxy]
     if not allow_binary:
@@ -582,6 +585,13 @@ class DownloadCmd(DownloadDirCmd):
             help="add packages from the given requirements file. "
             "This option can be used multiple times.",
         )
+        parser.add_argument(
+            "-f",
+            "--find-links",
+            metavar="URL",
+            help="If a url or path to an html file, then parse for links to archives. "
+            "If a local path or file:// url, then look for archives in the directory listing.",
+        )
         parser.add_argument("pkg", nargs="*", metavar="PKG", help="package to download")
 
     def run(self, args: argparse.Namespace) -> None:
@@ -601,6 +611,7 @@ class DownloadCmd(DownloadDirCmd):
             no_build_isolation=args.no_build_isolation,
             pip=args.pip_executable,
             extra_index_url=args.extra_index_url,
+            find_links=args.find_links,
         )
         pkgs = args.pkg
         if not pkgs and not args.requirements:
