@@ -22,7 +22,7 @@ Or using ``conda``:
 
 .. code:: sh
 
-    conda install -c conda-forge python-pypi-mirror 
+    conda install -c conda-forge python-pypi-mirror
 
 How to use it?
 ==============
@@ -66,8 +66,8 @@ following command into the current directory:
 
    python3 -m http.server
 
-It will start a HTTP server that will serve file from the current
-directory (which should contains the ``downloads`` directory and the
+It will start a HTTP server that will serve files from the current
+directory (which should contain the ``downloads`` directory and the
 ``simple`` directory). You can then install packages using your brand
 new mirror using the following command:
 
