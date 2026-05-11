@@ -1,3 +1,6 @@
+[project]
+dependencies = ["pip"]
+
 [tool.isort]
 profile = "black"
 
